@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lillero - interaktivt kort</title>
+  <style>
+    :root {
+      --section-bg: #e8f0f6;
+      --paper: #fffaf1;
+      --ink: #273343;
+      --muted: rgba(39, 51, 67, .68);
+      --line: rgba(39, 51, 67, .18);
+      --red: #d01b20;
+      --shadow: 0 18px 48px rgba(39, 51, 67, .18);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #f5f5f5;
+      color: var(--ink);
+      font-family: Inter, Helvetica, Arial, sans-serif;
+    }
+
+    button,
+    a {
+      font: inherit;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .lillero-map {
+      width: min(100%, 1440px);
+      margin: 0 auto;
+      background: var(--section-bg);
+      overflow: hidden;
+    }
+
+    .map-scroll {
+      position: relative;
+      overflow: visible;
+    }
+
+    .map-stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1688 / 932;
+      isolation: isolate;
+    }
+
+    .map-stage img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .hotspot-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+    }
+
+    .hotspot {
+      position: absolute;
+      left: calc(var(--x) * 1%);
+      top: calc(var(--y) * 1%);
+      width: 44px;
+      height: 44px;
+      transform: translate(-50%, -50%);
+      appearance: none;
+      -webkit-appearance: none;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .hotspot::before {
+      content: "";
+      position: absolute;
+      inset: 50%;
+      border-radius: 999px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .hotspot::before {
+      width: 16px;
+      height: 16px;
+      background: var(--red);
+      box-shadow: 0 0 0 8px rgba(255, 250, 241, .88);
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+
+    .hotspot:hover::before,
+    .hotspot:focus-visible::before,
+    .hotspot.is-active::before {
+      transform: translate(-50%, -50%) scale(1.08);
+      box-shadow: 0 0 0 8px rgba(255, 250, 241, .96);
+    }
+
+    .hotspot:focus-visible {
+      outline: 0;
+    }
+
+    .map-card {
+      position: absolute;
+      z-index: 4;
+      left: clamp(16px, calc(var(--card-x) * 1%), calc(100% - 322px));
+      top: clamp(16px, calc(var(--card-y) * 1%), calc(100% - 184px));
+      width: min(306px, calc(100% - 32px));
+      padding: 20px 22px;
+      border: 1px solid var(--line);
+      background: rgba(255, 250, 241, .97);
+      box-shadow: var(--shadow);
+    }
+
+    .map-card__area {
+      margin-bottom: 12px;
+      color: rgba(39, 51, 67, .58);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .map-card h2 {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 34px;
+      font-weight: 400;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .map-card p {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.48;
+    }
+
+    .map-card a {
+      display: inline-flex;
+      gap: 12px;
+      margin-top: 16px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .mobile-sheet {
+      display: none;
+    }
+
+    .gesture-overlay {
+      display: none;
+    }
+
+    @media (max-width: 760px) {
+      .lillero-map {
+        position: relative;
+      }
+
+      .map-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x proximity;
+      }
+
+      .map-stage {
+        min-width: min(760px, 190vw);
+        scroll-snap-align: start;
+      }
+
+      .hotspot {
+        width: 48px;
+        height: 48px;
+      }
+
+      .map-card {
+        display: none;
+      }
+
+      .mobile-sheet {
+        display: block;
+        margin: 0 16px 16px;
+        padding: 18px 20px;
+        border: 1px solid var(--line);
+        background: rgba(255, 250, 241, .94);
+      }
+
+      .mobile-sheet h2 {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 30px;
+        font-weight: 400;
+        line-height: 1;
+      }
+
+      .mobile-sheet p {
+        margin: 10px 0 0;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.45;
+      }
+
+      .mobile-sheet a {
+        display: inline-flex;
+        gap: 10px;
+        margin-top: 14px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .13em;
+        text-transform: uppercase;
+      }
+
+      .gesture-overlay {
+        display: grid;
+        place-items: center;
+        position: absolute;
+        inset: 0;
+        z-index: 6;
+        border: 0;
+        background: rgba(232, 240, 246, .3);
+        color: var(--ink);
+        cursor: pointer;
+        transition: opacity .22s ease, visibility .22s ease;
+      }
+
+      .gesture-overlay.is-hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .gesture-card {
+        display: grid;
+        gap: 10px;
+        justify-items: center;
+        padding: 18px 20px;
+        border: 1px solid rgba(39, 51, 67, .12);
+        background: rgba(255, 250, 241, .84);
+        box-shadow: 0 18px 48px rgba(39, 51, 67, .14);
+      }
+
+      .gesture-icon {
+        position: relative;
+        width: 92px;
+        height: 62px;
+      }
+
+      .gesture-icon::before,
+      .gesture-icon::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        width: 30px;
+        height: 42px;
+        border-radius: 18px 18px 11px 11px;
+        background: rgba(255, 255, 255, .95);
+        border: 1px solid rgba(39, 51, 67, .18);
+        box-shadow: 0 7px 16px rgba(39, 51, 67, .12);
+        animation: swipe-up 1.8s ease-in-out infinite;
+      }
+
+      .gesture-icon::before {
+        left: 19px;
+      }
+
+      .gesture-icon::after {
+        right: 19px;
+        animation-delay: .08s;
+      }
+
+      .gesture-arrow {
+        position: absolute;
+        top: 2px;
+        width: 28px;
+        height: 28px;
+        border-top: 2px solid rgba(39, 51, 67, .62);
+        border-left: 2px solid rgba(39, 51, 67, .62);
+        transform: rotate(45deg);
+        animation: arrow-up 1.8s ease-in-out infinite;
+      }
+
+      .gesture-arrow:first-child { left: 22px; }
+      .gesture-arrow:last-child { right: 22px; animation-delay: .08s; }
+
+      .gesture-card span {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .15em;
+        text-transform: uppercase;
+      }
+
+      @keyframes swipe-up {
+        0%, 100% { transform: translateY(9px); opacity: .76; }
+        45% { transform: translateY(-8px); opacity: 1; }
+      }
+
+      @keyframes arrow-up {
+        0%, 100% { transform: translateY(10px) rotate(45deg); opacity: .18; }
+        45% { transform: translateY(-7px) rotate(45deg); opacity: .72; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .gesture-icon::before,
+        .gesture-icon::after,
+        .gesture-arrow {
+          animation: none;
+        }
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="lillero-map" data-lillero-map>
+    <div class="map-scroll" data-map-scroll tabindex="0" aria-label="Interaktivt kort over Lillero">
+      <div class="map-stage">
+        <img src="/public/images/lillero-map-clean-ai.png" alt="Håndtegnet kort over Lillero med Stranden, Skoven og Vandkanten">
+        <div class="hotspot-layer" data-hotspot-layer></div>
+
+        <article class="map-card" data-map-card hidden>
+          <div class="map-card__area" data-card-area></div>
+          <h2 data-card-title></h2>
+          <p data-card-description></p>
+          <a href="#" data-card-cta></a>
+        </article>
+      </div>
+    </div>
+
+    <button class="gesture-overlay" type="button" data-gesture-overlay aria-label="Skjul hjælpelag">
+      <span class="gesture-card" aria-hidden="true">
+        <span class="gesture-icon">
+          <i class="gesture-arrow"></i>
+          <i class="gesture-arrow"></i>
+        </span>
+        <span>Stryg for at udforske</span>
+      </span>
+    </button>
+
+    <article class="mobile-sheet" data-mobile-sheet aria-live="polite" hidden></article>
+  </section>
+
+  <script>
+    const hotspots = [
+      { id: 'petanque', title: 'Petanque', area: 'Stranden', description: 'Et roligt spil i kanten af området, før eller efter strand og mad.', x: 18, y: 25, width: 9, height: 10, ctaLabel: 'Læs mere' },
+      { id: 'lillebaelt', title: 'Lillebælt', area: 'Stranden', description: 'Udsigt og ophold tæt på vandet.', x: 21, y: 53, width: 10, height: 10, ctaLabel: 'Se området' },
+      { id: 'strandbaren', title: 'Strandbaren', area: 'Stranden', description: 'Mad, drikke og samlingspunkt ved stranden.', x: 35, y: 52, width: 10, height: 10, ctaLabel: 'Se strandbaren' },
+      { id: 'kaffebaren', title: 'Kaffebaren', area: 'Skoven', description: 'Kaffe og pausepunkt mellem stranden og skoven.', x: 36, y: 61, width: 10, height: 10, ctaLabel: 'Se kaffebaren' },
+      { id: 'sauna', title: 'Sauna', area: 'Skoven', description: 'Sauna tæt på natur og vand.', x: 56, y: 57, width: 9, height: 10, ctaLabel: 'Se sauna' },
+      { id: 'vandkanten', title: 'Vandkanten', area: 'Vandkanten', description: 'Hytter og ophold helt tæt ved vandet.', x: 65, y: 24, width: 16, height: 12, ctaLabel: 'Se teltene' },
+      { id: 'strandhuse', title: 'Strandhuse', area: 'Stranden', description: 'Små huse tæt på strand og vand.', x: 83, y: 27, width: 16, height: 12, ctaLabel: 'Se strandhusene' },
+      { id: 'skovhuse', title: 'Skovhuse', area: 'Skoven', description: 'Hytter placeret inde mellem træerne.', x: 77, y: 50, width: 15, height: 12, ctaLabel: 'Se skovhusene' }
+    ];
+
+    document.querySelectorAll('[data-lillero-map]').forEach((map) => {
+      const layer = map.querySelector('[data-hotspot-layer]');
+      const card = map.querySelector('[data-map-card]');
+      const sheet = map.querySelector('[data-mobile-sheet]');
+      const overlay = map.querySelector('[data-gesture-overlay]');
+      const scrollArea = map.querySelector('[data-map-scroll]');
+      const mobileQuery = window.matchMedia('(max-width: 760px)');
+      let activeId = null;
+
+      const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      }[char]));
+
+      const sheetMarkup = (item) => `
+        <h2>${escapeHtml(item.title)}</h2>
+        <p>${escapeHtml(item.description)}</p>
+        <a href="#">${escapeHtml(item.ctaLabel)} <span aria-hidden="true">→</span></a>
+      `;
+
+      const renderHotspots = () => {
+        layer.innerHTML = hotspots.map((item) => `
+          <button
+            class="hotspot"
+            type="button"
+            style="--x:${item.x};--y:${item.y};--w:${item.width};--h:${item.height};"
+            data-hotspot-id="${escapeHtml(item.id)}"
+            aria-label="${escapeHtml(`${item.title}: ${item.description}`)}"
+            aria-pressed="false"></button>
+        `).join('');
+      };
+
+      const placeCard = (item) => {
+        card.style.setProperty('--card-x', Math.min(Math.max(item.x + 4, 2), 72));
+        card.style.setProperty('--card-y', Math.min(Math.max(item.y - 12, 3), 58));
+      };
+
+      const hideGesture = () => {
+        overlay.classList.add('is-hidden');
+      };
+
+      const selectHotspot = (id) => {
+        const item = hotspots.find((entry) => entry.id === id);
+        if (!item) return;
+        activeId = item.id;
+
+        map.querySelectorAll('[data-hotspot-id]').forEach((button) => {
+          const isActive = button.dataset.hotspotId === item.id;
+          button.classList.toggle('is-active', isActive);
+          button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+
+        if (mobileQuery.matches) {
+          sheet.innerHTML = sheetMarkup(item);
+          sheet.hidden = false;
+          card.hidden = true;
+          hideGesture();
+          return;
+        }
+
+        card.querySelector('[data-card-area]').textContent = item.area;
+        card.querySelector('[data-card-title]').textContent = item.title;
+        card.querySelector('[data-card-description]').textContent = item.description;
+        card.querySelector('[data-card-cta]').innerHTML = `${escapeHtml(item.ctaLabel)} <span aria-hidden="true">→</span>`;
+        placeCard(item);
+        card.hidden = false;
+      };
+
+      renderHotspots();
+
+      layer.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-hotspot-id]');
+        if (button) selectHotspot(button.dataset.hotspotId);
+      });
+
+      layer.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        const button = event.target.closest('[data-hotspot-id]');
+        if (!button) return;
+        event.preventDefault();
+        selectHotspot(button.dataset.hotspotId);
+      });
+
+      overlay.addEventListener('click', hideGesture);
+      scrollArea.addEventListener('pointerdown', hideGesture, { once: true });
+      scrollArea.addEventListener('scroll', hideGesture, { once: true });
+
+      mobileQuery.addEventListener('change', () => {
+        card.hidden = true;
+        sheet.hidden = !activeId || !mobileQuery.matches;
+        if (activeId && mobileQuery.matches) selectHotspot(activeId);
+      });
+    });
+  </script>
+</body>
+</html>
