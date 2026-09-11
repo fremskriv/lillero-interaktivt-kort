@@ -329,7 +329,7 @@
   <section class="lillero-map" data-lillero-map>
     <div class="map-scroll" data-map-scroll tabindex="0" aria-label="Interaktivt kort over Lillero">
       <div class="map-stage">
-        <img src="/public/images/lillero-map-no-dot.png" alt="Håndtegnet kort over Lillero med Stranden, Skoven og Vandkanten">
+        <img src="/public/images/lillero-map-corrected-names.png" alt="Håndtegnet kort over Lillero med Stranden, Skoven og Vandkanten">
         <div class="hotspot-layer" data-hotspot-layer></div>
 
         <article class="map-card" data-map-card hidden>
@@ -356,14 +356,14 @@
 
   <script>
     const hotspots = [
-      { id: 'petanque', title: 'Petanque', area: 'Stranden', description: 'Et roligt spil i kanten af området, før eller efter strand og mad.', x: 18, y: 25, width: 9, height: 10, ctaLabel: 'Læs mere' },
-      { id: 'lillebaelt', title: 'Lillebælt', area: 'Stranden', description: 'Udsigt og ophold tæt på vandet.', x: 21, y: 53, width: 10, height: 10, ctaLabel: 'Se området' },
-      { id: 'strandbaren', title: 'Strandbaren', area: 'Stranden', description: 'Mad, drikke og samlingspunkt ved stranden.', x: 35, y: 52, width: 10, height: 10, ctaLabel: 'Se strandbaren' },
-      { id: 'kaffebaren', title: 'Kaffebaren', area: 'Skoven', description: 'Kaffe og pausepunkt mellem stranden og skoven.', x: 36, y: 61, width: 10, height: 10, ctaLabel: 'Se kaffebaren' },
-      { id: 'sauna', title: 'Sauna', area: 'Skoven', description: 'Sauna tæt på natur og vand.', x: 56, y: 57, width: 9, height: 10, ctaLabel: 'Se sauna' },
-      { id: 'vandkanten', title: 'Vandkanten', area: 'Vandkanten', description: 'Hytter og ophold helt tæt ved vandet.', x: 65, y: 24, width: 16, height: 12, ctaLabel: 'Se teltene' },
-      { id: 'strandhuse', title: 'Strandhuse', area: 'Stranden', description: 'Små huse tæt på strand og vand.', x: 83, y: 27, width: 16, height: 12, ctaLabel: 'Se strandhusene' },
-      { id: 'skovhuse', title: 'Skovhuse', area: 'Skoven', description: 'Hytter placeret inde mellem træerne.', x: 77, y: 50, width: 15, height: 12, ctaLabel: 'Se skovhusene' }
+      { id: 'petanque', title: "Petanque", area: 'Stranden', description: "Et roligt spil i udkanten af pladsen – før eller efter strand og mad.", x: 18, y: 25, width: 9, height: 10, ctaLabel: 'Læs mere' },
+      { id: 'lilleb', title: "lilleB", area: 'Stranden', description: "Afslappet restaurant med lokale råvarer tilberedt over åben ild og vin fra formel Bs kælder.", x: 21, y: 53, width: 10, height: 10, ctaLabel: 'Se lilleB' },
+      { id: 'strandbaren', title: "Strandbaren", area: 'Stranden', description: "Pladsens samlingspunkt dagen igennem – kolde drikke, burgere og uformelle retter.", x: 35, y: 52, width: 10, height: 10, ctaLabel: 'Se strandbaren' },
+      { id: 'kaffebaren', title: "Kaffebaren", area: 'Skoven', description: "Ispind, softice, kaffe og bagværk – også reception for Lilleros gæster.", x: 36, y: 61, width: 10, height: 10, ctaLabel: 'Se kaffebaren' },
+      { id: 'sauna', title: "Sauna", area: 'Skoven', description: "Varm kroppen helt igennem, og tag \"Det Kolde Gys\" bagefter for den fulde oplevelse.", x: 56, y: 57, width: 9, height: 10, ctaLabel: 'Se sauna' },
+      { id: 'vandkanten', title: "Vandkanten", area: 'Vandkanten', description: "Et fredfyldt teltområde for sig selv, omgivet af løv og vilde urter, med egen sti ned mod stranden.", x: 65, y: 24, width: 16, height: 12, ctaLabel: 'Se teltene' },
+      { id: 'strandhuse', title: "Stranden", area: 'Stranden', description: "Teltene tættest på vandet, hvor himmel og hav møder teltdugen, og solen forvandler alt til gyldent lys.", x: 83, y: 27, width: 16, height: 12, ctaLabel: 'Se teltene' },
+      { id: 'skovhuse', title: "Skoven", area: 'Skoven', description: "Telte dér, hvor skoven åbner sig mod landskabet – trækronerne filtrerer lyset, og fuglene synger jer i gang.", x: 77, y: 50, width: 15, height: 12, ctaLabel: 'Se teltene' }
     ];
 
     document.querySelectorAll('[data-lillero-map]').forEach((map) => {
