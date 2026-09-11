@@ -6,7 +6,7 @@
   <title>Lillero - interaktivt kort</title>
   <style>
     :root {
-      --section-bg: #e8f0f6;
+      --section-bg: #dae1cb;
       --paper: #fffaf1;
       --ink: #273343;
       --muted: rgba(39, 51, 67, .68);
@@ -16,11 +16,12 @@
     }
 
     * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
 
     body {
       margin: 0;
       min-height: 100vh;
-      background: #f5f5f5;
+      background: var(--section-bg);
       color: var(--ink);
       font-family: Inter, Helvetica, Arial, sans-serif;
     }
@@ -329,7 +330,7 @@
   <section class="lillero-map" data-lillero-map>
     <div class="map-scroll" data-map-scroll tabindex="0" aria-label="Interaktivt kort over Lillero">
       <div class="map-stage">
-        <img src="/public/images/lillero-map-corrected-names.png" alt="Håndtegnet kort over Lillero med Stranden, Skoven og Vandkanten">
+        <img src="/public/images/lillero-map-green.png" alt="Håndtegnet kort over Lillero med Stranden, Skoven og Vandkanten">
         <div class="hotspot-layer" data-hotspot-layer></div>
 
         <article class="map-card" data-map-card hidden>
@@ -356,11 +357,11 @@
 
   <script>
     const hotspots = [
-      { id: 'petanque', title: "Petanque", area: 'Stranden', description: "Et roligt spil i udkanten af pladsen – før eller efter strand og mad.", x: 18, y: 25, width: 9, height: 10, ctaLabel: 'Læs mere' },
+      { id: 'petanque', title: "Petanque", area: 'Stranden', description: "Et roligt spil i udkanten af pladsen – før eller efter strand og mad.", x: 18, y: 25, width: 9, height: 10, ctaLabel: null },
       { id: 'lilleb', title: "lilleB", area: 'Stranden', description: "Afslappet restaurant med lokale råvarer tilberedt over åben ild og vin fra formel Bs kælder.", x: 21, y: 53, width: 10, height: 10, ctaLabel: 'Se lilleB' },
       { id: 'strandbaren', title: "Strandbaren", area: 'Stranden', description: "Pladsens samlingspunkt dagen igennem – kolde drikke, burgere og uformelle retter.", x: 35, y: 52, width: 10, height: 10, ctaLabel: 'Se strandbaren' },
       { id: 'kaffebaren', title: "Kaffebaren", area: 'Skoven', description: "Ispind, softice, kaffe og bagværk – også reception for Lilleros gæster.", x: 36, y: 61, width: 10, height: 10, ctaLabel: 'Se kaffebaren' },
-      { id: 'sauna', title: "Sauna", area: 'Skoven', description: "Varm kroppen helt igennem, og tag \"Det Kolde Gys\" bagefter for den fulde oplevelse.", x: 56, y: 57, width: 9, height: 10, ctaLabel: 'Se sauna' },
+      { id: 'sauna', title: "Sauna", area: 'Skoven', description: "Varm kroppen helt igennem, og tag \"Det Kolde Gys\" bagefter for den fulde oplevelse.", x: 56, y: 57, width: 9, height: 10, ctaLabel: null },
       { id: 'vandkanten', title: "Vandkanten", area: 'Vandkanten', description: "Et fredfyldt teltområde for sig selv, omgivet af løv og vilde urter, med egen sti ned mod stranden.", x: 65, y: 24, width: 16, height: 12, ctaLabel: 'Se teltene' },
       { id: 'strandhuse', title: "Stranden", area: 'Stranden', description: "Teltene tættest på vandet, hvor himmel og hav møder teltdugen, og solen forvandler alt til gyldent lys.", x: 83, y: 27, width: 16, height: 12, ctaLabel: 'Se teltene' },
       { id: 'skovhuse', title: "Skoven", area: 'Skoven', description: "Telte dér, hvor skoven åbner sig mod landskabet – trækronerne filtrerer lyset, og fuglene synger jer i gang.", x: 77, y: 50, width: 15, height: 12, ctaLabel: 'Se teltene' }
@@ -383,10 +384,12 @@
         "'": '&#039;'
       }[char]));
 
+      const hasLink = (item) => Boolean(item.ctaLabel) && !['petanque', 'legeplads', 'sauna'].includes(item.id);
+
       const sheetMarkup = (item) => `
         <h2>${escapeHtml(item.title)}</h2>
         <p>${escapeHtml(item.description)}</p>
-        <a href="#">${escapeHtml(item.ctaLabel)} <span aria-hidden="true">→</span></a>
+        ${hasLink(item) ? `<a href="#">${escapeHtml(item.ctaLabel)} <span aria-hidden="true">→</span></a>` : ''}
       `;
 
       const renderHotspots = () => {
@@ -432,7 +435,9 @@
         card.querySelector('[data-card-area]').textContent = item.area;
         card.querySelector('[data-card-title]').textContent = item.title;
         card.querySelector('[data-card-description]').textContent = item.description;
-        card.querySelector('[data-card-cta]').innerHTML = `${escapeHtml(item.ctaLabel)} <span aria-hidden="true">→</span>`;
+        const cta = card.querySelector('[data-card-cta]');
+        cta.hidden = !hasLink(item);
+        cta.innerHTML = hasLink(item) ? `${escapeHtml(item.ctaLabel)} <span aria-hidden="true">→</span>` : '';
         placeCard(item);
         card.hidden = false;
       };
