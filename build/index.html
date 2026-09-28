@@ -81,6 +81,22 @@
       pointer-events: none;
     }
 
+    .map-label {
+      position: absolute;
+      z-index: 1;
+      padding: .32em .7em .38em;
+      border-radius: 48% 42% 46% 38% / 48% 45% 52% 43%;
+      background: #d4d5d2;
+      color: #171b24;
+      font-family: "Chalkboard SE", "Comic Sans MS", cursive;
+      font-size: 1.25cqw;
+      line-height: 1;
+      font-weight: 500;
+      white-space: nowrap;
+      transform: translate(-50%, -50%) rotate(-8deg);
+      pointer-events: none;
+    }
+
     .hotspot-layer {
       position: absolute;
       inset: 0;
@@ -350,6 +366,9 @@
         <img src="/public/images/lillero-map-jonas.png" alt="Håndtegnet kort over Lillero med 16 telte, Vandkanten, Stranden, Skoven, kajak, legeplads, WC og bad">
         <span class="tent-number" style="left:86.25%;top:42.15%;transform:rotate(-24deg)" aria-label="Telt 11">11.</span>
         <span class="tent-number" style="left:69.05%;top:59.15%;transform:rotate(8deg)" aria-label="Telt 14">14.</span>
+        <span class="map-label" style="left:45.5%;top:10.5%">KAJAK</span>
+        <span class="map-label" style="left:39.3%;top:43%">LEGEPLADS</span>
+        <span class="map-label" style="left:47.8%;top:70.5%">WC OG BAD</span>
         <div class="hotspot-layer" data-hotspot-layer></div>
 
         <article class="map-card" data-map-card hidden>
