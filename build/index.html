@@ -159,6 +159,26 @@
       box-shadow: var(--shadow);
     }
 
+    .map-close {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--ink);
+      font: 24px/1 Arial, sans-serif;
+      cursor: pointer;
+    }
+    .map-close:hover { background: rgba(39, 51, 67, .06); }
+    .map-close:focus-visible { outline: 2px solid var(--red); outline-offset: -4px; }
+    .map-card h2, .mobile-sheet h2 { padding-right: 24px; }
+    .map-card__area { padding-right: 24px; }
+
     .map-card__area {
       margin-bottom: 12px;
       color: rgba(39, 51, 67, .58);
@@ -195,6 +215,7 @@
     }
 
     .mobile-sheet {
+      position: relative;
       display: none;
     }
 
@@ -372,6 +393,7 @@
         <div class="hotspot-layer" data-hotspot-layer></div>
 
         <article class="map-card" data-map-card hidden>
+          <button class="map-close" type="button" data-map-close aria-label="Luk information">×</button>
           <div class="map-card__area" data-card-area></div>
           <h2 data-card-title></h2>
           <p data-card-description></p>
@@ -428,6 +450,7 @@
       const hasLink = (item) => Boolean(item.ctaLabel) && !['petanque', 'legeplads', 'sauna'].includes(item.id);
 
       const sheetMarkup = (item) => `
+        <button class="map-close" type="button" data-map-close aria-label="Luk information">×</button>
         <h2>${escapeHtml(item.title)}</h2>
         <p>${escapeHtml(item.description)}</p>
         ${hasLink(item) ? `<a href="#">${escapeHtml(item.ctaLabel)} <span aria-hidden="true">→</span></a>` : ''}
@@ -473,6 +496,7 @@
           return;
         }
 
+        sheet.hidden = true;
         card.querySelector('[data-card-area]').textContent = item.area;
         card.querySelector('[data-card-title]').textContent = item.title;
         card.querySelector('[data-card-description]').textContent = item.description;
@@ -483,19 +507,43 @@
         card.hidden = false;
       };
 
+      const closeInfo = (restoreFocus = false) => {
+        const trigger = map.querySelector(`[data-hotspot-id="${activeId}"]`);
+        const focusInPanel = card.contains(document.activeElement) || sheet.contains(document.activeElement);
+        activeId = null;
+        card.hidden = true;
+        sheet.hidden = true;
+        map.querySelectorAll('[data-hotspot-id]').forEach((button) => {
+          button.classList.remove('is-active');
+          button.setAttribute('aria-pressed', 'false');
+        });
+        if (restoreFocus || focusInPanel) trigger?.focus({ preventScroll: true });
+      };
+
       renderHotspots();
 
       layer.addEventListener('click', (event) => {
         const button = event.target.closest('[data-hotspot-id]');
-        if (button) selectHotspot(button.dataset.hotspotId);
+        if (!button) return;
+        if (button.dataset.hotspotId === activeId) closeInfo();
+        else selectHotspot(button.dataset.hotspotId);
       });
 
-      layer.addEventListener('keydown', (event) => {
-        if (event.key !== 'Enter' && event.key !== ' ') return;
-        const button = event.target.closest('[data-hotspot-id]');
-        if (!button) return;
-        event.preventDefault();
-        selectHotspot(button.dataset.hotspotId);
+      map.addEventListener('click', (event) => {
+        if (event.target.closest('[data-map-close]')) closeInfo(true);
+      });
+
+      document.addEventListener('click', (event) => {
+        if (!activeId || card.contains(event.target) || sheet.contains(event.target) ||
+            event.target.closest('[data-hotspot-id]')) return;
+        closeInfo();
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && activeId) {
+          event.preventDefault();
+          closeInfo(true);
+        }
       });
 
       overlay.addEventListener('click', hideGesture);
@@ -503,9 +551,7 @@
       scrollArea.addEventListener('scroll', hideGesture, { once: true });
 
       mobileQuery.addEventListener('change', () => {
-        card.hidden = true;
-        sheet.hidden = !activeId || !mobileQuery.matches;
-        if (activeId && mobileQuery.matches) selectHotspot(activeId);
+        if (activeId) selectHotspot(activeId);
       });
     });
   </script>
