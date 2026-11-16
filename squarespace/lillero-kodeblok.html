@@ -1,0 +1,569 @@
+<!-- Lillero: Paste this entire file into ONE Squarespace HTML Code Block.
+JavaScript support is required. Edit hotspot href values below to enable links.
+The map image is already hosted; replace its src if you upload your own image. -->
+<div data-lillero-embed>
+<template>
+<style>
+    :host { display: block; width: 100%;
+      --section-bg: #dae1cb;
+      --paper: #fffaf1;
+      --ink: #273343;
+      --muted: rgba(39, 51, 67, .68);
+      --line: rgba(39, 51, 67, .18);
+      --red: #d01b20;
+      --shadow: 0 18px 48px rgba(39, 51, 67, .18);
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+
+    .lillero-map {
+      margin: 0;
+      background: var(--section-bg);
+      color: var(--ink);
+      font-family: Inter, Helvetica, Arial, sans-serif;
+    }
+
+    button,
+    a {
+      font: inherit;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .lillero-map {
+      width: min(100%, 1440px);
+      margin: 0 auto;
+      background: var(--section-bg);
+      overflow: hidden;
+    }
+
+    .map-scroll {
+      position: relative;
+      overflow: visible;
+    }
+
+    .map-stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 3046 / 1434;
+      isolation: isolate;
+      container-type: inline-size;
+    }
+
+    .map-stage img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .tent-number {
+      position: absolute;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      width: 1.35%;
+      height: 2.5%;
+      background: #f4f6f2;
+      color: #111;
+      font-family: "Comic Sans MS", "Chalkboard SE", cursive;
+      font-size: .95cqw;
+      font-weight: 700;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .map-label {
+      position: absolute;
+      z-index: 1;
+      padding: .32em .7em .38em;
+      border-radius: 48% 42% 46% 38% / 48% 45% 52% 43%;
+      background: #d4d5d2;
+      color: #171b24;
+      font-family: "Chalkboard SE", "Comic Sans MS", cursive;
+      font-size: 1.25cqw;
+      line-height: 1;
+      font-weight: 500;
+      white-space: nowrap;
+      transform: translate(-50%, -50%) rotate(-8deg);
+      pointer-events: none;
+    }
+
+    .hotspot-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+    }
+
+    .hotspot {
+      position: absolute;
+      left: calc(var(--x) * 1%);
+      top: calc(var(--y) * 1%);
+      width: 44px;
+      height: 44px;
+      transform: translate(-50%, -50%);
+      appearance: none;
+      -webkit-appearance: none;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .hotspot::before {
+      content: "";
+      position: absolute;
+      inset: 50%;
+      border-radius: 999px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .hotspot::before {
+      width: 16px;
+      height: 16px;
+      background: var(--red);
+      box-shadow: 0 0 0 8px rgba(255, 250, 241, .88);
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+
+    .hotspot:hover::before,
+    .hotspot:focus-visible::before,
+    .hotspot.is-active::before {
+      transform: translate(-50%, -50%) scale(1.08);
+      box-shadow: 0 0 0 8px rgba(255, 250, 241, .96);
+    }
+
+    .hotspot:focus-visible {
+      outline: 0;
+    }
+
+    .map-card {
+      position: absolute;
+      z-index: 4;
+      left: clamp(16px, calc(var(--card-x) * 1%), calc(100% - 322px));
+      top: clamp(16px, calc(var(--card-y) * 1%), calc(100% - 184px));
+      width: min(306px, calc(100% - 32px));
+      padding: 20px 22px;
+      border: 1px solid var(--line);
+      background: rgba(255, 250, 241, .97);
+      box-shadow: var(--shadow);
+    }
+
+    .map-close {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--ink);
+      font: 24px/1 Arial, sans-serif;
+      cursor: pointer;
+    }
+    .map-close:hover { background: rgba(39, 51, 67, .06); }
+    .map-close:focus-visible { outline: 2px solid var(--red); outline-offset: -4px; }
+    .map-card h2, .mobile-sheet h2 { padding-right: 24px; }
+    .map-card__area { padding-right: 24px; }
+
+    .map-card__area {
+      margin-bottom: 12px;
+      color: rgba(39, 51, 67, .58);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .map-card h2 {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 34px;
+      font-weight: 400;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .map-card p {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.48;
+    }
+
+    .map-card a {
+      display: inline-flex;
+      gap: 12px;
+      margin-top: 16px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .mobile-sheet {
+      position: relative;
+      display: none;
+    }
+
+    .gesture-overlay {
+      display: none;
+    }
+
+    @media (max-width: 760px) {
+      .lillero-map {
+        position: relative;
+      }
+
+      .map-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x proximity;
+      }
+
+      .map-stage {
+        min-width: min(760px, 190vw);
+        scroll-snap-align: start;
+      }
+
+      .hotspot {
+        width: 48px;
+        height: 48px;
+      }
+
+      .map-card {
+        display: none;
+      }
+
+      .mobile-sheet {
+        display: block;
+        margin: 0 16px 16px;
+        padding: 18px 20px;
+        border: 1px solid var(--line);
+        background: rgba(255, 250, 241, .94);
+      }
+
+      .mobile-sheet h2 {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 30px;
+        font-weight: 400;
+        line-height: 1;
+      }
+
+      .mobile-sheet p {
+        margin: 10px 0 0;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.45;
+      }
+
+      .mobile-sheet a {
+        display: inline-flex;
+        gap: 10px;
+        margin-top: 14px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .13em;
+        text-transform: uppercase;
+      }
+
+      .gesture-overlay {
+        display: grid;
+        place-items: center;
+        position: absolute;
+        inset: 0;
+        z-index: 6;
+        border: 0;
+        background: rgba(232, 240, 246, .3);
+        color: var(--ink);
+        cursor: pointer;
+        transition: opacity .22s ease, visibility .22s ease;
+      }
+
+      .gesture-overlay.is-hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .gesture-card {
+        display: grid;
+        gap: 10px;
+        justify-items: center;
+        padding: 18px 20px;
+        border: 1px solid rgba(39, 51, 67, .12);
+        background: rgba(255, 250, 241, .84);
+        box-shadow: 0 18px 48px rgba(39, 51, 67, .14);
+      }
+
+      .gesture-icon {
+        position: relative;
+        width: 92px;
+        height: 62px;
+      }
+
+      .gesture-icon::before,
+      .gesture-icon::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        width: 30px;
+        height: 42px;
+        border-radius: 18px 18px 11px 11px;
+        background: rgba(255, 255, 255, .95);
+        border: 1px solid rgba(39, 51, 67, .18);
+        box-shadow: 0 7px 16px rgba(39, 51, 67, .12);
+        animation: swipe-up 1.8s ease-in-out infinite;
+      }
+
+      .gesture-icon::before {
+        left: 19px;
+      }
+
+      .gesture-icon::after {
+        right: 19px;
+        animation-delay: .08s;
+      }
+
+      .gesture-arrow {
+        position: absolute;
+        top: 2px;
+        width: 28px;
+        height: 28px;
+        border-top: 2px solid rgba(39, 51, 67, .62);
+        border-left: 2px solid rgba(39, 51, 67, .62);
+        transform: rotate(45deg);
+        animation: arrow-up 1.8s ease-in-out infinite;
+      }
+
+      .gesture-arrow:first-child { left: 22px; }
+      .gesture-arrow:last-child { right: 22px; animation-delay: .08s; }
+
+      .gesture-card span {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .15em;
+        text-transform: uppercase;
+      }
+
+      @keyframes swipe-up {
+        0%, 100% { transform: translateY(9px); opacity: .76; }
+        45% { transform: translateY(-8px); opacity: 1; }
+      }
+
+      @keyframes arrow-up {
+        0%, 100% { transform: translateY(10px) rotate(45deg); opacity: .18; }
+        45% { transform: translateY(-7px) rotate(45deg); opacity: .72; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .gesture-icon::before,
+        .gesture-icon::after,
+        .gesture-arrow {
+          animation: none;
+        }
+      }
+    }
+  </style>
+<section class="lillero-map" data-lillero-map>
+    <div class="map-scroll" data-map-scroll tabindex="0" aria-label="Interaktivt kort over Lillero">
+      <div class="map-stage">
+        <img src="https://raw.githubusercontent.com/fremskriv/lillero-interaktivt-kort/915927a12836f3b259d5d5ed6a412b71ddd46def/public/images/lillero-map-jonas.png" alt="Håndtegnet kort over Lillero med 16 telte, Vandkanten, Stranden, Skoven, kajak, legeplads, WC og bad">
+        <span class="tent-number" style="left:86.25%;top:42.15%;transform:rotate(-24deg)" aria-label="Telt 11">11.</span>
+        <span class="tent-number" style="left:69.05%;top:59.15%;transform:rotate(8deg)" aria-label="Telt 14">14.</span>
+        <span class="map-label" style="left:45.5%;top:10.5%">KAJAK</span>
+        <span class="map-label" style="left:39.3%;top:43%">LEGEPLADS</span>
+        <span class="map-label" style="left:47.8%;top:70.5%">WC OG BAD</span>
+        <div class="hotspot-layer" data-hotspot-layer></div>
+
+        <article class="map-card" data-map-card hidden>
+          <button class="map-close" type="button" data-map-close aria-label="Luk information">×</button>
+          <div class="map-card__area" data-card-area></div>
+          <h2 data-card-title></h2>
+          <p data-card-description></p>
+          <a href="#" data-card-cta></a>
+        </article>
+      </div>
+    </div>
+
+    <button class="gesture-overlay" type="button" data-gesture-overlay aria-label="Skjul hjælpelag">
+      <span class="gesture-card" aria-hidden="true">
+        <span class="gesture-icon">
+          <i class="gesture-arrow"></i>
+          <i class="gesture-arrow"></i>
+        </span>
+        <span>Stryg for at udforske</span>
+      </span>
+    </button>
+
+    <article class="mobile-sheet" data-mobile-sheet aria-live="polite" hidden></article>
+  </section>
+</template>
+</div>
+<script>
+(() => {
+  const host = document.currentScript.previousElementSibling;
+  if (!host || host.shadowRoot) return;
+  const template = host.querySelector('template');
+  const root = host.attachShadow({ mode: 'open' });
+  root.appendChild(template.content.cloneNode(true));
+  template.remove();
+
+    const hotspots = [
+      { id: 'kajak', title: "Kajak", area: 'Vandkanten', description: "Når solen står højt, kan du tage en tur på vandet. Vi har fire kajakker og SUP-boards, som du frit kan låne som gæst på Lillero.", x: 44.3, y: 18.5, href: null, ctaLabel: null },
+      { id: 'legeplads', title: "Legeplads", area: 'Stranden', description: "Legepladsen ved Strandbaren.", x: 36.2, y: 55.5, href: null, ctaLabel: null },
+      { id: 'wc-bad', title: "WC og bad", area: 'Skoven', description: "Her finder du WC og bad.", x: 48, y: 63, href: null, ctaLabel: null },
+      { id: 'petanque', title: "Petanque", area: 'Stranden', description: "Et roligt spil i udkanten af pladsen – før eller efter strand og mad.", x: 20.2, y: 25.5, width: 9, height: 10, href: null, ctaLabel: null },
+      { id: 'lilleb', title: "lilleB", area: 'Stranden', description: "Afslappet restaurant med lokale råvarer tilberedt over åben ild og vin fra formel Bs kælder.", x: 23, y: 56.5, width: 10, height: 10, href: null, ctaLabel: 'Se lilleB' },
+      { id: 'strandbaren', title: "Strandbaren", area: 'Stranden', description: "Pladsens samlingspunkt dagen igennem – kolde drikke, burgere og uformelle retter.", x: 29, y: 59, width: 10, height: 10, href: null, ctaLabel: 'Se strandbaren' },
+      { id: 'kaffebaren', title: "Kaffebaren", area: 'Skoven', description: "Ispind, softice, kaffe og bagværk – også reception for Lilleros gæster.", x: 37.2, y: 65.5, width: 10, height: 10, href: null, ctaLabel: 'Se kaffebaren' },
+      { id: 'sauna', title: "Sauna", area: 'Skoven', description: "Varm kroppen helt igennem, og tag \"Det Kolde Gys\" bagefter for den fulde oplevelse.", x: 56.1, y: 61, width: 9, height: 10, href: null, ctaLabel: null },
+      { id: 'vandkanten', title: "Vandkanten", area: 'Vandkanten', description: "Et fredfyldt teltområde for sig selv, omgivet af løv og vilde urter, med egen sti ned mod stranden.", x: 65.8, y: 18.5, width: 16, height: 12, href: null, ctaLabel: 'Se teltene' },
+      { id: 'strandhuse', title: "Stranden", area: 'Stranden', description: "Teltene tættest på vandet, hvor himmel og hav møder teltdugen, og solen forvandler alt til gyldent lys.", x: 82.5, y: 19, width: 16, height: 12, href: null, ctaLabel: 'Se teltene' },
+      { id: 'skovhuse', title: "Skoven", area: 'Skoven', description: "Telte dér, hvor skoven åbner sig mod landskabet – trækronerne filtrerer lyset, og fuglene synger jer i gang.", x: 76, y: 53.2, width: 15, height: 12, href: null, ctaLabel: 'Se teltene' }
+    ];
+
+    root.querySelectorAll('[data-lillero-map]').forEach((map) => {
+      const layer = map.querySelector('[data-hotspot-layer]');
+      const card = map.querySelector('[data-map-card]');
+      const sheet = map.querySelector('[data-mobile-sheet]');
+      const overlay = map.querySelector('[data-gesture-overlay]');
+      const scrollArea = map.querySelector('[data-map-scroll]');
+      const mobileQuery = window.matchMedia('(max-width: 760px)');
+      let activeId = null;
+
+      const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      }[char]));
+
+      const hasLink = (item) => Boolean(item.ctaLabel && item.href && /^(https?:\/\/|\/(?!\/)|#)/i.test(item.href));
+
+      const sheetMarkup = (item) => `
+        <button class="map-close" type="button" data-map-close aria-label="Luk information">×</button>
+        <h2>${escapeHtml(item.title)}</h2>
+        <p>${escapeHtml(item.description)}</p>
+        ${hasLink(item) ? `<a href="${escapeHtml(item.href)}">${escapeHtml(item.ctaLabel)} <span aria-hidden="true">→</span></a>` : ''}
+      `;
+
+      const renderHotspots = () => {
+        layer.innerHTML = hotspots.map((item) => `
+          <button
+            class="hotspot"
+            type="button"
+            style="--x:${item.x};--y:${item.y};--w:${item.width};--h:${item.height};"
+            data-hotspot-id="${escapeHtml(item.id)}"
+            aria-label="${escapeHtml(`${item.title}: ${item.description}`)}"
+            aria-pressed="false"></button>
+        `).join('');
+      };
+
+      const placeCard = (item) => {
+        card.style.setProperty('--card-x', Math.min(Math.max(item.x + 4, 2), 72));
+        card.style.setProperty('--card-y', Math.min(Math.max(item.y - 12, 3), 58));
+      };
+
+      const hideGesture = () => {
+        overlay.classList.add('is-hidden');
+      };
+
+      const selectHotspot = (id) => {
+        const item = hotspots.find((entry) => entry.id === id);
+        if (!item) return;
+        activeId = item.id;
+
+        map.querySelectorAll('[data-hotspot-id]').forEach((button) => {
+          const isActive = button.dataset.hotspotId === item.id;
+          button.classList.toggle('is-active', isActive);
+          button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+
+        if (mobileQuery.matches) {
+          sheet.innerHTML = sheetMarkup(item);
+          sheet.hidden = false;
+          card.hidden = true;
+          hideGesture();
+          return;
+        }
+
+        sheet.hidden = true;
+        card.querySelector('[data-card-area]').textContent = item.area;
+        card.querySelector('[data-card-title]').textContent = item.title;
+        card.querySelector('[data-card-description]').textContent = item.description;
+        const cta = card.querySelector('[data-card-cta]');
+        cta.hidden = !hasLink(item);
+        cta.href = hasLink(item) ? item.href : '#';
+        cta.innerHTML = hasLink(item) ? `${escapeHtml(item.ctaLabel)} <span aria-hidden="true">→</span>` : '';
+        placeCard(item);
+        card.hidden = false;
+      };
+
+      const closeInfo = (restoreFocus = false) => {
+        const trigger = map.querySelector(`[data-hotspot-id="${activeId}"]`);
+        const focusInPanel = card.contains(root.activeElement) || sheet.contains(root.activeElement);
+        activeId = null;
+        card.hidden = true;
+        sheet.hidden = true;
+        map.querySelectorAll('[data-hotspot-id]').forEach((button) => {
+          button.classList.remove('is-active');
+          button.setAttribute('aria-pressed', 'false');
+        });
+        if (restoreFocus || focusInPanel) trigger?.focus({ preventScroll: true });
+      };
+
+      renderHotspots();
+
+      layer.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-hotspot-id]');
+        if (!button) return;
+        if (button.dataset.hotspotId === activeId) closeInfo();
+        else selectHotspot(button.dataset.hotspotId);
+      });
+
+      map.addEventListener('click', (event) => {
+        if (event.target.closest('[data-map-close]')) closeInfo(true);
+      });
+
+      root.addEventListener('click', (event) => {
+        if (!activeId || card.contains(event.target) || sheet.contains(event.target) ||
+            event.target.closest('[data-hotspot-id]')) return;
+        closeInfo();
+      });
+
+      document.addEventListener('click', (event) => {
+        if (activeId && !event.composedPath().includes(host)) closeInfo();
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && activeId) {
+          event.preventDefault();
+          closeInfo(true);
+        }
+      });
+
+      overlay.addEventListener('click', hideGesture);
+      scrollArea.addEventListener('pointerdown', hideGesture, { once: true });
+      scrollArea.addEventListener('scroll', hideGesture, { once: true });
+
+      mobileQuery.addEventListener('change', () => {
+        if (activeId) selectHotspot(activeId);
+      });
+    });
+  
+})();
+</script>
